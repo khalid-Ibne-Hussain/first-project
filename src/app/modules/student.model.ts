@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose';
 // import validator from 'validator';
-import { Guardian, LocalGuardian, Student, UserName } from './student/student.interface';
+import { TGuardian, TLocalGuardian, TStudent, StudentModel, TUserName } from './student/student.interface';
 
 
-const userNameSchema = new Schema<UserName>({
+const userNameSchema = new Schema<TUserName>({
 
     firstName:{
         type:String,
@@ -36,7 +36,7 @@ const userNameSchema = new Schema<UserName>({
     },
 });
 
-const guardianSchema= new Schema<Guardian>({
+const guardianSchema= new Schema<TGuardian>({
     fatherName:{
         type:String,
         required:[true,'Father name is required.'],
@@ -63,7 +63,7 @@ const guardianSchema= new Schema<Guardian>({
     },
 })
 
-const localGuardianSchema = new Schema<LocalGuardian>({
+const localGuardianSchema = new Schema<TLocalGuardian>({
     name:{
         type:String,
         required:true,
@@ -85,7 +85,7 @@ const localGuardianSchema = new Schema<LocalGuardian>({
 
 // 2. schema
 // ---------------------------------
-const studentSchema = new Schema<Student>({
+const studentSchema = new Schema<TStudent,StudentModel>({
     id:{
         type: String,
         required:true,
@@ -136,9 +136,23 @@ const studentSchema = new Schema<Student>({
         type: String,
         enum:['active','blocked'],
         default:'active',
-    }
+    },
+});
 
-})
+// creating a custom static method
+studentSchema.statics.isUserExists = async function (id) {
+    const existingUser = await Student.findOne({id});
+
+    return existingUser;
+    
+}
+
+// creating a custom instance method
+// studentSchema.methods.isUserExists= async function(id: string) {
+//     const existingUser = await Student.findOne({id});
+//     return existingUser; 
+// }
+
 
 // 3. model 
-export const StudentModel = model<Student>('Student',studentSchema);
+export const Student = model<TStudent, StudentModel>('Student',studentSchema);

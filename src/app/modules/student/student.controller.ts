@@ -1,31 +1,37 @@
 import { Request, Response } from "express";
 import { StudentsServices } from "./student.service";
 // import Joi from 'Joi';
-import studentValidationSchema from "./student.validation";
+// import studentValidationSchema from "./student.validation";
+// import {z} from 'zod';
+import StudentValidationSchema from "./student.validation";
+
+
 
 const createStudent = async(req: Request, res:Response)=>{
 try{
 
-    // creating a schema validation using Joi___________
-
+    // creating a schema validation using zod___________
     const {student: studentData} = req.body;
 
-    // data validating using Joi
-    const {error,value} = studentValidationSchema.validate(studentData);
+    // data validation using zod
+    const zodParsedData = StudentValidationSchema.parse(studentData)
+
+    // data validating using joi_________________________
+    // const {error,value} = studentValidationSchema.validate(studentData);
     // console.log({error},{value});
 
     // will call service func to send this data 
-    const result = await StudentsServices.createStudentIntoDB(value);
+    const result = await StudentsServices.createStudentIntoDB(zodParsedData);
 
 
-
-    if(error){
-        res.status(500).json({
-            success:false,
-            message: 'something went wrong',
-            error: error.details, //[or ES6] error,
-        });
-    }
+// joi part_________________
+    // if(error){
+    //     res.status(500).json({
+    //         success:false,
+    //         message: 'something went wrong',
+    //         error: error.details, //[or ES6] error,
+    //     });
+    // }
 
     // send response
     res.status(200).json({
@@ -34,11 +40,11 @@ try{
         data: result,
     })
 }
-catch (err){
+catch (err: any){
     // console.log(err);
     res.status(500).json({
         success:false,
-        message: 'something went wrong',
+        message: err.message||'something went wrong',
         error: err,
     });
 }  
