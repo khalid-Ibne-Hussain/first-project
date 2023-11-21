@@ -15,7 +15,12 @@ try{
     })
 }
 catch (err){
-    console.log(err);
+    // console.log(err);
+    res.status(500).json({
+        success:false,
+        message: 'something went wrong',
+        error: err,
+    });
 }  
 };
 
@@ -46,12 +51,13 @@ const getSingleStudent =async (req:Request, res:Response) => {
         success:true,
         message: 'Student is retrieved successfully',
         data: result,
-    })
+    });
     }
     catch(err){
-        console.log(err);
+        // console.log(err);
+       
     }
-}
+};
 
 
 
