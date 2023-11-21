@@ -1,11 +1,31 @@
 import { Request, Response } from "express";
 import { StudentsServices } from "./student.service";
+// import Joi from 'Joi';
+import studentValidationSchema from "./student.validation";
 
 const createStudent = async(req: Request, res:Response)=>{
 try{
+
+    // creating a schema validation using Joi___________
+
     const {student: studentData} = req.body;
+
+    // data validating using Joi
+    const {error,value} = studentValidationSchema.validate(studentData);
+    // console.log({error},{value});
+
     // will call service func to send this data 
-    const result = await StudentsServices.createStudentIntoDB(studentData);
+    const result = await StudentsServices.createStudentIntoDB(value);
+
+
+
+    if(error){
+        res.status(500).json({
+            success:false,
+            message: 'something went wrong',
+            error: error.details, //[or ES6] error,
+        });
+    }
 
     // send response
     res.status(200).json({

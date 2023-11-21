@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import validator from 'validator';
+// import validator from 'validator';
 import { Guardian, LocalGuardian, Student, UserName } from './student/student.interface';
 
 
@@ -28,11 +28,11 @@ const userNameSchema = new Schema<UserName>({
         required:[true,"Last Name is required"],
         trim:true,
         maxlength:[20, "Max length 20 char."],
-        validate:{
-            validator: (value:string)=>
-                validator.isAlpha(value),
-                message: '{VALUE} is not valid',            
-        },
+        // validate:{
+        //     validator: (value:string)=>
+        //         validator.isAlpha(value),
+        //         message: '{VALUE} is not valid',            
+        // },
     },
 });
 
@@ -110,10 +110,10 @@ const studentSchema = new Schema<Student>({
         type: String, 
         required:true, 
         unique:true,
-        validate:{
-            validator: (value:string)=> validator.isEmail(value),
-            message:'{VALUE} is not a valid email type.'
-        },
+        // validate:{
+        //     validator: (value:string)=> validator.isEmail(value),
+        //     message:'{VALUE} is not a valid email type.'
+        // },
     },
     contactNo:{type: String, required:true},
     emergencyContactNo:{type: String,required:true},
