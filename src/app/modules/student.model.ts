@@ -1,6 +1,8 @@
 import { Schema, model } from 'mongoose';
 // import validator from 'validator';
 import { TGuardian, TLocalGuardian, TStudent, StudentModel, TUserName } from './student/student.interface';
+import bcrypt from 'bcrypt'; 
+import config from '../config';
 
 
 const userNameSchema = new Schema<TUserName>({
@@ -91,6 +93,11 @@ const studentSchema = new Schema<TStudent,StudentModel>({
         required:true,
         unique:true,
     },
+    password:{
+        type: String,
+        required:[true,"Password is required"],
+        maxlength: [20,"password can not be more than 20 char"]
+    },
     name:{
         type: userNameSchema,
         required: true,
@@ -137,9 +144,53 @@ const studentSchema = new Schema<TStudent,StudentModel>({
         enum:['active','blocked'],
         default:'active',
     },
+    isDeleted:{
+        type: Boolean,
+        default: false,
+    }
 });
 
-// creating a custom static method
+// *************middleware*************
+// pre save middleware/hook: will work on create(), save()
+studentSchema.pre('save',async function(next){
+    // console.log(this, 'pre hook : we will save the data');
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const user = this;
+    // hashing pass
+    user.password = await bcrypt.hash(user.password, Number(config.bcrypt_salt_rounds), 
+    );
+    next();
+});
+
+// post save middleware/hook
+studentSchema.post('save',function(doc,next){
+    doc.password='';
+    // console.log(this, 'post hook : we saved the data');
+    next();
+});
+
+// query middleware___________________
+studentSchema.pre('find', function(next){
+    // console.log(this);
+    this.find({isDeleted: {$ne: true}})
+    next();
+})
+
+studentSchema.pre('findOne', function(next){
+    // console.log(this);
+    this.find({isDeleted: {$ne: true}})
+    next();
+})
+
+// [{$match:{isDeleted:{$ne:true}}}, {'$match':{id:'123456'}}]
+studentSchema.pre('aggregate', function(next){
+    // console.log(this);
+    this.pipeline().unshift({$match: {isDeleted:{$ne: true}}});
+    next();
+});
+
+
+// creating a custom static method____________
 studentSchema.statics.isUserExists = async function (id) {
     const existingUser = await Student.findOne({id});
 
@@ -147,7 +198,7 @@ studentSchema.statics.isUserExists = async function (id) {
     
 }
 
-// creating a custom instance method
+// creating a custom instance method___________________
 // studentSchema.methods.isUserExists= async function(id: string) {
 //     const existingUser = await Student.findOne({id});
 //     return existingUser; 
