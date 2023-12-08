@@ -8,12 +8,13 @@ const userValidationSchema = z.object({
     })
     .max(50, { message: "Password can not be more than 20 char" })
     .optional(),
-  //   needsPasswordChange: z.boolean().optional(), // admin theke asbe na , aita model er maddhome set hobe.
-  //   role: z.enum(["student", "faculty", "admin"]), // endpoint theke set hobe
-  //   status: z.enum(["in-progress", "blocked"]).default("in-progress"), // model theke asbe
-  //   isDeleted: z.boolean().optional().default(false), // model theke asbe
 });
 
 export const UserValidation = {
   userValidationSchema,
 };
+
+//   needsPasswordChange: z.boolean().optional(), // admin theke asbe na , aita model er maddhome set hobe.
+//   role: z.enum(["student", "faculty", "admin"]), // endpoint theke set hobe
+//   status: z.enum(["in-progress", "blocked"]).default("in-progress"), // model theke asbe
+//   isDeleted: z.boolean().optional().default(false), // model theke asbe
