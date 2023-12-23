@@ -7,6 +7,7 @@ import { SemesterRegistration } from "../semesterRegistration/semesterRegistrati
 import { AcademicDepartment } from "../academicDepartment/academicDepartment.model";
 import { Course } from "../Course/course.model";
 import { Faculty } from "../faculty/faculty.model";
+import { hasTimeConflict } from "./offeredCourse.utils";
 
 const createOfferedCourseIntoDB = async (payload: TOfferedCourse) => {
   const {
@@ -16,6 +17,9 @@ const createOfferedCourseIntoDB = async (payload: TOfferedCourse) => {
     course,
     faculty,
     section,
+    days,
+    startTime,
+    endTime,
   } = payload;
 
   /**
@@ -99,6 +103,42 @@ const createOfferedCourseIntoDB = async (payload: TOfferedCourse) => {
     );
   }
 
+  //   solve the problem: same teacher take classes in same time &  same day
+  //   get the schedules of the faculties
+  const assignedSchedules = await OfferedCourse.find({
+    semesterRegistration,
+    faculty,
+    days: { $in: days },
+  }).select("days startTime endTime");
+
+  const newSchedule = {
+    days,
+    startTime,
+    endTime,
+  };
+  /*
+  assignedSchedules.forEach((schedule) => {
+    const existingStartTime = new Date(`1970-01-01T${schedule.startTime}`);
+    const existingEndTime = new Date(`1970-01-01T${schedule.endTime}`);
+    const newStartTime = new Date(`1970-01-01T${newSchedule.startTime}`);
+    const newEndTime = new Date(`1970-01-01T${newSchedule.endTime}`);
+
+    if (newStartTime < existingEndTime && newEndTime > existingStartTime) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        `This faculty is not available at that time ! Choose other time or day.`
+      );
+    }
+  });
+  */
+  //   console.log(hasTimeConflict(assignedSchedules, newSchedule));
+  if (hasTimeConflict(assignedSchedules, newSchedule)) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      `This faculty is not available at that time ! Choose other time or day.`
+    );
+  }
+
   const result = await OfferedCourse.create({ ...payload, academicSemester });
 
   return result;
@@ -106,9 +146,65 @@ const createOfferedCourseIntoDB = async (payload: TOfferedCourse) => {
 
 const getAllOfferedCoursesFromDB = async () => {};
 
+// update_____________________________________
+const updateOfferedCourseIntoDB = async (
+  id: string,
+  payload: Pick<TOfferedCourse, "faculty" | "days" | "startTime" | "endTime">
+) => {
+  const { faculty, days, startTime, endTime } = payload;
+  const isOfferedCourseExists = await OfferedCourse.findById(id);
+
+  if (!isOfferedCourseExists) {
+    throw new AppError(httpStatus.NOT_FOUND, "Offered course not found!");
+  }
+
+  const isFacultyExists = await Faculty.findById(faculty);
+
+  if (!isFacultyExists) {
+    throw new AppError(httpStatus.NOT_FOUND, "Faculty not found!");
+  }
+
+  const semesterRegistration = isOfferedCourseExists.semesterRegistration;
+
+  const semesterRegistrationStatus = await SemesterRegistration.findById(
+    semesterRegistration
+  );
+
+  if (semesterRegistrationStatus?.status !== "UPCOMING") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `You can not update this offered course as it is ${semesterRegistrationStatus?.status}`
+    );
+  }
+  //   get the schedules of the faculties
+  const assignedSchedules = await OfferedCourse.find({
+    semesterRegistration,
+    faculty,
+    days: { $in: days },
+  }).select("days startTime endTime");
+
+  const newSchedule = {
+    days,
+    startTime,
+    endTime,
+  };
+  if (hasTimeConflict(assignedSchedules, newSchedule)) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      `This faculty is not available at that time ! Choose other time or day.`
+    );
+  }
+
+  const result = await OfferedCourse.findByIdAndUpdate(id, payload, {
+    new: true, //updated doc given
+  });
+  return result;
+};
+
 // const getSingleOfferedCourseFromDB = async (id: string) => {};
 export const OfferedCourseServices = {
   createOfferedCourseIntoDB,
   getAllOfferedCoursesFromDB,
   //   getSingleOfferedCourseFromDB,
+  updateOfferedCourseIntoDB,
 };
